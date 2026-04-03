@@ -1,0 +1,15 @@
+{
+    "device_id": "esp32_lahan_6509",
+    "timestamp": "2026-05-14T03:00:00Z",
+    "lokasi": "Makassar, Sulawesi Selatan",
+    "sensors": {
+      "suhu_udara": 30.3,
+      "kelembaban_udara": 82.3,
+      "ph_tanah": 6.2,
+      "nitrogen": 160,
+      "fosfor": 28,
+      "kalium": 102,
+      "kelembaban_tanah": 34,
+      "hujan_terdeteksi": true
+    }
+  }
