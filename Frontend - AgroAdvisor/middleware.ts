@@ -31,6 +31,7 @@ export function middleware(request: NextRequest) {
 // This improves performance by not running middleware on static assets.
 export const config = {
   matcher: [
+    '/dashboard',        // Exact match
     '/dashboard/:path*', // Protect all dashboard routes
     '/login'             // Catch authenticated users trying to access login
   ],
