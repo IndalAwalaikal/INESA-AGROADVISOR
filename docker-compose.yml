@@ -8,7 +8,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password123}
       MYSQL_DATABASE: ${DB_NAME:-agroadvisor}
     ports:
-      - "3306:3306"
+      - "3310:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -16,6 +16,42 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # ── Ollama (Local LLM Fallback) ────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agroadvisor-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    # Untuk GPU NVIDIA (uncomment jika tersedia):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ── Auto-pull model Ollama saat startup ─────────────
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: agroadvisor-ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: ["ollama", "pull", "qwen2.5:7b"]
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
 
   # ── Backend (FastAPI + Uvicorn) ────────────────────
   backend:
@@ -31,9 +67,12 @@ services:
     environment:
       - DB_HOST=db
       - DB_PORT=3306
+      - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
       db:
         condition: service_healthy
+      ollama:
+        condition: service_started
 
   # ── Frontend (Next.js) ─────────────────────────────
   frontend:
@@ -49,3 +88,4 @@ services:
 
 volumes:
   mysql_data:
+  ollama_data:

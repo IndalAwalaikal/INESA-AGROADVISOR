@@ -1,7 +1,9 @@
 import os
 import json
+import httpx
 from google import genai
 from google.genai import types
+from groq import AsyncGroq
 from app.services.rule_engine import hitung_dosis_pestisida
 from app.services.db_service import get_hama_penyakit
 from dotenv import load_dotenv
@@ -9,15 +11,42 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+groq_key = os.getenv("GROQ_API_KEY")
+groq_client = AsyncGroq(api_key=groq_key) if groq_key else None
 
-# Daftar model untuk fallback (berurutan dari priorititas tertinggi)
+# Ollama config (fallback terakhir)
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+
+# Daftar model untuk fallback (berurutan dari prioritas tertinggi)
 MODELS_FALLBACK = [
     'gemini-2.5-flash-lite', 
     'gemini-2.5-flash', 
     'gemini-flash-latest',
     'gemini-2.0-flash', 
-    'gemini-2.0-flash-lite'
+    'gemini-2.0-flash-lite',
+    'groq/llama-3.3-70b-versatile',
+    f'ollama/{OLLAMA_MODEL}',
 ]
+
+async def _call_ollama(system_prompt: str, user_prompt: str) -> str:
+    """Panggil Ollama via OpenAI-compatible API. Fallback terakhir."""
+    async with httpx.AsyncClient(timeout=120.0) as http:
+        response = await http.post(
+            f"{OLLAMA_BASE_URL}/v1/chat/completions",
+            json={
+                "model": OLLAMA_MODEL,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "temperature": 0.7,
+                "stream": False,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
 
 # ─── Profil Hama & Penyakit Per Tanaman ──────────────────────────────────────
 PROFIL_HAMA = {
@@ -321,11 +350,30 @@ async def generate_rekomendasi_pestisida(
         try:
             import logging
             logging.info(f"Mencoba model: {model_name}")
-            response = client.models.generate_content(
-                model=model_name, contents=prompt,
-                config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT_PESTISIDA, temperature=0.7)
-            )
-            data = json.loads(_bersihkan_json(response.text))
+            
+            if model_name.startswith("ollama/"):
+                text = await _call_ollama(SYSTEM_PROMPT_PESTISIDA, prompt)
+            elif model_name.startswith("groq/"):
+                if not groq_client: continue
+                m_real = model_name.split("/", 1)[1]
+                response = await groq_client.chat.completions.create(
+                    model=m_real,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT_PESTISIDA},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    response_format={"type": "json_object"}
+                )
+                text = response.choices[0].message.content
+            else:
+                response = client.models.generate_content(
+                    model=model_name, contents=prompt,
+                    config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT_PESTISIDA, temperature=0.7)
+                )
+                text = response.text
+            
+            data = json.loads(_bersihkan_json(text))
             data["_model_used"] = model_name
             return {"sukses": True, "data": data}
         except Exception as e:

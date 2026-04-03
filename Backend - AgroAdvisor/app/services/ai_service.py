@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import asyncio
+import httpx
 from google import genai
 from google.genai import types
 from groq import AsyncGroq
@@ -16,11 +17,14 @@ logger = logging.getLogger(__name__)
 
 # Initialize clients
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-# GROQ_API_KEY might be empty initially, AsyncGroq might handle it but better to guard
 groq_key = os.getenv("GROQ_API_KEY")
 groq_client = AsyncGroq(api_key=groq_key) if groq_key else None
 
-# Daftar model untuk fallback (berurutan dari priorititas tertinggi)
+# Ollama config (fallback terakhir — self-hosted)
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+
+# Daftar model untuk fallback (berurutan dari prioritas tertinggi)
 MODELS_FALLBACK = [
     'gemini-2.5-flash-lite', 
     'gemini-2.5-flash', 
@@ -29,8 +33,28 @@ MODELS_FALLBACK = [
     'gemini-2.0-flash', 
     'gemini-1.5-flash',
     'gemini-1.5-flash-8b',
-    'groq/llama-3.3-70b-versatile'
+    'groq/llama-3.3-70b-versatile',
+    f'ollama/{OLLAMA_MODEL}',
 ]
+
+async def _call_ollama(system_prompt: str, user_prompt: str) -> str:
+    """Panggil Ollama via OpenAI-compatible API. Fallback terakhir."""
+    async with httpx.AsyncClient(timeout=120.0) as http:
+        response = await http.post(
+            f"{OLLAMA_BASE_URL}/v1/chat/completions",
+            json={
+                "model": OLLAMA_MODEL,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                "temperature": 0.7,
+                "stream": False,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
 
 # ─── Profil Kebutuhan Spesifik Per Tanaman ────────────────────────────────────
 PROFIL_TANAMAN = {
@@ -346,7 +370,9 @@ async def generate_rekomendasi_pupuk(
         try:
             logger.info(f"Mencoba model (Pupuk): {model_name}")
             
-            if model_name.startswith("groq/"):
+            if model_name.startswith("ollama/"):
+                text = await _call_ollama(SYSTEM_PROMPT_PUPUK, prompt)
+            elif model_name.startswith("groq/"):
                 if not groq_client: 
                     logger.warning("Groq client tidak terinisialisasi (API Key kosong?)")
                     continue
@@ -390,7 +416,9 @@ async def generate_saran_tanaman(ph: float, nitrogen: float, fosfor: float, kali
         try:
             logger.info(f"Mencoba model (Saran Tanaman): {model_name}")
             
-            if model_name.startswith("groq/"):
+            if model_name.startswith("ollama/"):
+                text = await _call_ollama(SYSTEM_PROMPT_SARAN_TANAMAN, prompt)
+            elif model_name.startswith("groq/"):
                 if not groq_client: continue
                 m_real = model_name.split("/", 1)[1]
                 response = await groq_client.chat.completions.create(
@@ -433,7 +461,9 @@ async def generate_alur2_saran_tanaman_dan_pupuk(
     crops = ["jagung", "kedelai", "cabai", "tomat", "kangkung"] # Fallback
     for model_name in MODELS_FALLBACK:
         try:
-            if model_name.startswith("groq/"):
+            if model_name.startswith("ollama/"):
+                text1 = await _call_ollama("Balas hanya dengan JSON array.", prompt_step1)
+            elif model_name.startswith("groq/"):
                 if not groq_client: continue
                 m_real = model_name.split("/", 1)[1]
                 res1 = await groq_client.chat.completions.create(
@@ -483,7 +513,9 @@ async def generate_alur2_saran_tanaman_dan_pupuk(
         try:
             logger.info(f"Mencoba model Alur 2: {model_name}")
             
-            if model_name.startswith("groq/"):
+            if model_name.startswith("ollama/"):
+                text3 = await _call_ollama(SYSTEM_PROMPT_ALUR2, prompt_step3)
+            elif model_name.startswith("groq/"):
                 if not groq_client: continue
                 m_real = model_name.split("/", 1)[1]
                 response = await groq_client.chat.completions.create(

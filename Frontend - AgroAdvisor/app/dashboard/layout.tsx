@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
+import { ArrowLeft } from "lucide-react"
 
 import {
   Sidebar,
@@ -19,7 +20,6 @@ import {
   SidebarTrigger,
   SidebarSeparator,
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
 import { WebSocketProvider } from "@/app/context/WebSocketContext"
 import AlertBar from "@/components/AlertBar"
 import { useWS } from "@/app/context/WebSocketContext"
@@ -51,41 +51,35 @@ function TopHeader() {
   const { connected } = useWS();
   
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-white/[0.06] bg-[#142118] px-4 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-white/[0.06] bg-[#142118] px-4 lg:px-6">
+      {/* Kiri: Menu & Logo Mobile */}
       <div className="flex items-center gap-3">
         <SidebarTrigger className="text-white/50 hover:text-white hover:bg-white/[0.06] font-bold text-xs tracking-widest px-2">
           MENU
         </SidebarTrigger>
         
         <div className="flex lg:hidden items-center gap-2">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg overflow-hidden">
-            <Image src="/inesa.png" alt="AgroAdvisor Logo" width={40} height={40} className="h-full w-full object-contain" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden">
+            <Image src="/inesa.png" alt="AgroAdvisor Logo" width={32} height={32} className="h-full w-full object-contain" />
           </div>
-          <div className="flex flex-col">
+          <div className="hidden sm:flex flex-col">
             <span className="text-xs font-bold text-white leading-none">AgroAdvisor</span>
-            <span className="text-[10px] text-white/50 uppercase tracking-tighter">Desa Rajang</span>
+            <span className="text-[10px] text-white/50 uppercase tracking-tighter mt-0.5">Desa Rajang</span>
           </div>
         </div>
       </div>
       
-      <div className="flex items-center gap-2">
-        <Link href="/">
-          <Button variant="ghost" size="sm" className="text-white/50 hover:text-white hover:bg-white/[0.06] h-8 px-3 font-semibold tracking-wide">
-            <span className="sm:inline">&larr; Beranda</span>
-          </Button>
-        </Link>
-      </div>
-
-      <div className="ml-auto flex items-center gap-4">
+      {/* Kanan: Status Koneksi */}
+      <div className="flex items-center">
         {connected ? (
-          <div className="flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5">
-            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs font-medium text-primary">Sistem Aktif</span>
+          <div className="flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-2.5 sm:px-3 py-1.5" title="Sistem Aktif">
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
+            <span className="hidden sm:inline text-xs font-medium text-primary whitespace-nowrap">Sistem Aktif</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 opacity-50">
-            <div className="h-2 w-2 rounded-full bg-white/40" />
-            <span className="text-xs font-medium text-white/60">Terputus</span>
+          <div className="flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-2.5 sm:px-3 py-1.5 opacity-50" title="Terputus">
+            <div className="h-2 w-2 rounded-full bg-white/40 shrink-0" />
+            <span className="hidden sm:inline text-xs font-medium text-white/60 whitespace-nowrap">Terputus</span>
           </div>
         )}
       </div>
@@ -127,6 +121,17 @@ export default function DashboardLayout({
           <SidebarSeparator className="bg-white/[0.2] ml-0 mr-4 h-[4px] group-data-[collapsible=icon]:hidden" />
 
           <SidebarContent className="p-2 group-data-[collapsible=icon]:p-1.5" style={{ background: "transparent" }}>
+            {/* Tombol Kembali ke Beranda */}
+            <div className="px-2 mb-2">
+              <Link
+                href="/"
+                className="group/back flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-primary/15 to-primary/5 px-3 py-2 text-[13px] font-medium text-primary/90 transition-all duration-300 hover:from-primary/25 hover:to-primary/10 hover:text-primary hover:shadow-[0_0_16px_rgba(34,197,94,0.1)] active:scale-[0.97] group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-2"
+              >
+                <ArrowLeft className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover/back:-translate-x-0.5" />
+                <span className="group-data-[collapsible=icon]:hidden">Kembali ke Beranda</span>
+              </Link>
+            </div>
+
             <SidebarGroup>
               <SidebarGroupLabel className="text-white/40 text-xs uppercase tracking-wider px-3 font-medium">
                 Menu Utama

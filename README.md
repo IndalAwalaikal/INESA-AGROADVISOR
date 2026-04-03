@@ -42,7 +42,7 @@ Platform web full-stack untuk pertanian presisi — mencakup **rekomendasi pupuk
             :3000│             :8001│               :3306│
                  ▼                  ▼                    ▼
    ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-   │    Frontend       │  │    Backend        │  │    Database       │
+   │    Frontend       │  │    Backend        │  │    Database      │
    │  Next.js 16 (SSR) │  │  FastAPI+Uvicorn  │  │    MySQL 8.0     │
    │  Tailwind CSS v4  │──│  Gemini / Groq AI │──│   agroadvisor    │
    │  shadcn/ui        │  │  WebSocket        │  │                  │
