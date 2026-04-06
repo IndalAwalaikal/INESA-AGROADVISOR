@@ -4,6 +4,13 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 
 const getWsUrl = () => {
   if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const port = window.location.port;
+    // Jika diakses melalui Nginx (port 80/8080/kosong), WebSocket lewat proxy
+    if (port === '' || port === '80' || port === '8080' || port === '443') {
+      return `${protocol}://${window.location.host}/ws`;
+    }
+    // Development mode — langsung ke backend
     return `ws://${window.location.hostname}:8001/ws`;
   }
   return 'ws://localhost:8001/ws';

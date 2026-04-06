@@ -2,6 +2,12 @@ import axios from 'axios';
 
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
+    const port = window.location.port;
+    // Jika diakses melalui Nginx (port 80/8080/kosong), gunakan relative URL
+    if (port === '' || port === '80' || port === '8080' || port === '443') {
+      return '';
+    }
+    // Development mode — langsung ke backend
     return `http://${window.location.hostname}:8001`;
   }
   return 'http://localhost:8001';

@@ -66,7 +66,17 @@ Backend API untuk pertanian presisi berbasis sensor IoT dan AI (Claude — Anthr
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins    = [os.getenv("FRONTEND_URL", "http://localhost:3000"), "http://localhost", "http://127.0.0.1"],
+    allow_origins    = [
+        os.getenv("FRONTEND_URL", "http://localhost:3000"),
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://localhost:8001",
+        "http://localhost",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1:8001",
+        "http://127.0.0.1",
+    ],
     allow_credentials= True,
     allow_methods    = ["*"],
     allow_headers    = ["*"],
