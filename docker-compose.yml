@@ -73,6 +73,11 @@ services:
         condition: service_healthy
       ollama:
         condition: service_started
+    command: >
+      sh -c "python -c 'from app.database import init_db; init_db()' &&
+             python app/scripts/seed_crops.py &&
+             python app/scripts/seed_pests.py &&
+             uvicorn main:app --host 0.0.0.0 --port 8001"
 
   # ── Frontend (Next.js) ─────────────────────────────
   frontend:

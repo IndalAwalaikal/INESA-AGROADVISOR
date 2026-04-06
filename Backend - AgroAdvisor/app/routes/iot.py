@@ -40,7 +40,7 @@ async def post_sensor_iot(req: IoTSensorRequest, db: Session = Depends(get_db)):
     
     # 4. Broadcast ke Dashboard via WebSocket
     await manager.broadcast({
-        "type": "sensor_update",
+        "tipe": "sensor_update",
         "data": {
             **req.model_dump(),
             "status_pompa": hasil["status_pompa"],
