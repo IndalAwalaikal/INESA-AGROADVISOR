@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from contextlib import asynccontextmanager
 
 from app.database import init_db
 from app.routes.pupuk     import router as pupuk_router
@@ -13,6 +14,30 @@ from app.routes.iot       import router as iot_router
 from app.scheduler        import start_scheduler, stop_scheduler
 
 load_dotenv()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("AgriSmart AI Backend starting...")
+    try:
+        init_db()
+    except Exception as e:
+        print(f"Gagal koneksi database: {e}")
+        print("Pastikan XAMPP MySQL berjalan dan database 'agroadvisor' sudah dibuat.")
+        return
+
+    # Mulai background scheduler
+    start_scheduler()
+    print("Server siap di http://localhost:8001")
+    print("Dokumentasi API  : http://localhost:8001/docs")
+    print("WebSocket URL    : ws://localhost:8001/ws")
+    print("Dashboard data   : http://localhost:8001/dashboard")
+    
+    yield
+    
+    stop_scheduler()
+    print("AgriSmart AI Backend stopped.")
+
 
 app = FastAPI(
     title    = "AgriSmart AI — Backend",
@@ -35,6 +60,7 @@ Backend API untuk pertanian presisi berbasis sensor IoT dan AI (Claude — Anthr
     version  = "1.0.0",
     docs_url = "/docs",
     redoc_url= "/redoc",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -54,30 +80,6 @@ app.include_router(ws_router)
 app.include_router(ws_info_router)
 app.include_router(auth_router)
 app.include_router(iot_router)
-
-
-@app.on_event("startup")
-def on_startup():
-    print("AgriSmart AI Backend starting...")
-    try:
-        init_db()
-    except Exception as e:
-        print(f"Gagal koneksi database: {e}")
-        print("Pastikan XAMPP MySQL berjalan dan database 'agrismart' sudah dibuat.")
-        return
-
-    # Mulai background scheduler
-    start_scheduler()
-    print("Server siap di http://localhost:8001")
-    print("Dokumentasi API  : http://localhost:8001/docs")
-    print("WebSocket URL    : ws://localhost:8001/ws")
-    print("Dashboard data   : http://localhost:8001/dashboard")
-
-
-@app.on_event("shutdown")
-def on_shutdown():
-    stop_scheduler()
-    print("AgriSmart AI Backend stopped.")
 
 
 @app.get("/", tags=["Info"])

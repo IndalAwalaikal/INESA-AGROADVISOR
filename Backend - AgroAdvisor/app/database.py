@@ -134,7 +134,7 @@ def init_db():
         # Pastikan kolom jenis_rekomendasi ada (migrasi ringan)
         try:
             conn.execute(text("ALTER TABLE feedback_rekomendasi ADD COLUMN jenis_rekomendasi VARCHAR(20) DEFAULT 'pupuk' AFTER rekomendasi_id"))
-        except:
+        except Exception:
             pass
 
         # Tabel rekomendasi pestisida
@@ -217,8 +217,13 @@ def init_db():
         # Pastikan kolom kelembaban_mati ada (migrasi ringan)
         try:
             conn.execute(text("ALTER TABLE konfigurasi_pompa ADD COLUMN kelembaban_mati FLOAT DEFAULT 60.0 AFTER kelembaban_nyala"))
-        except:
+        except Exception:
             pass
+
+        # Pastikan baris default (id=1) ada — tanpa ini UPDATE tidak berfungsi
+        conn.execute(text("""
+            INSERT IGNORE INTO konfigurasi_pompa (id) VALUES (1)
+        """))
 
         # Tabel jadwal pompa terjadwal (cron jobs)
         conn.execute(text("""

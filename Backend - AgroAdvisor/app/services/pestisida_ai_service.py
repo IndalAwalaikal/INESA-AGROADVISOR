@@ -23,8 +23,10 @@ MODELS_FALLBACK = [
     'gemini-2.5-flash-lite', 
     'gemini-2.5-flash', 
     'gemini-flash-latest',
+    'gemini-2.0-flash-lite', 
     'gemini-2.0-flash', 
-    'gemini-2.0-flash-lite',
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-8b',
     'groq/llama-3.3-70b-versatile',
     f'ollama/{OLLAMA_MODEL}',
 ]
@@ -367,7 +369,7 @@ async def generate_rekomendasi_pestisida(
                 )
                 text = response.choices[0].message.content
             else:
-                response = client.models.generate_content(
+                response = await client.aio.models.generate_content(
                     model=model_name, contents=prompt,
                     config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT_PESTISIDA, temperature=0.7)
                 )
@@ -412,7 +414,7 @@ async def identifikasi_hama_dari_gambar(image_bytes: bytes, mime_type: str) -> d
             }
         }
         
-        response = client.models.generate_content(
+        response = await client.aio.models.generate_content(
             model='gemini-2.5-flash',
             contents=[SYSTEM_PROMPT_VISION, image_part],
             config=types.GenerateContentConfig(temperature=0.2)

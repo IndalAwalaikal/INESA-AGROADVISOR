@@ -221,11 +221,11 @@ export default function PompaPage() {
                   <h3 className="text-white/60 text-xs font-medium uppercase tracking-widest mb-4">Kondisi Tanah (Live)</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-2xl font-bold text-white">{sensor?.kelembapan_tanah || '-'}%</div>
-                      <div className="text-[10px] text-white/30 uppercase">Kelembapan</div>
+                      <div className="text-2xl font-bold text-white">{sensor?.kelembaban_tanah || '-'}%</div>
+                      <div className="text-[10px] text-white/30 uppercase">Kelembaban</div>
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-white">{sensor?.suhu_tanah || '-'}°C</div>
+                      <div className="text-2xl font-bold text-white">{sensor?.suhu_udara || '-'}°C</div>
                       <div className="text-[10px] text-white/30 uppercase">Suhu Tanah</div>
                     </div>
                   </div>

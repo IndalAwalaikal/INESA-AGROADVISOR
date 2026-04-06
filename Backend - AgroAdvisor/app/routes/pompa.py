@@ -116,7 +116,7 @@ def get_status(db: Session = Depends(get_db)):
     "/manual",
     summary="Override manual — operator nyalakan atau matikan pompa",
 )
-def post_kontrol_manual(
+async def post_kontrol_manual(
     request: ManualKontrolRequest,
     db:      Session = Depends(get_db),
 ):
@@ -131,6 +131,14 @@ def post_kontrol_manual(
 
     if not hasil.get("sukses"):
         raise HTTPException(status_code=400, detail=hasil.get("error"))
+
+    from app.websocket_manager import manager
+    if manager.jumlah_client > 0:
+        await manager.kirim_update_pompa(
+            status=hasil["status_baru"],
+            alasan=hasil["alasan"],
+            data_sensor={}
+        )
 
     return hasil
 

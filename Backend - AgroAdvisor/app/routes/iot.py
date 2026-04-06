@@ -24,7 +24,7 @@ class IoTSensorRequest(BaseModel):
 @router.post("/sensor")
 async def post_sensor_iot(req: IoTSensorRequest, db: Session = Depends(get_db)):
     # 1. Update state sensor in-memory
-    update_sensor_iot(req.dict())
+    update_sensor_iot(req.model_dump())
     
     # 2. Ambil sesi aktif
     sesi_id = get_atau_buat_sesi()
@@ -42,7 +42,7 @@ async def post_sensor_iot(req: IoTSensorRequest, db: Session = Depends(get_db)):
     await manager.broadcast({
         "type": "sensor_update",
         "data": {
-            **req.dict(),
+            **req.model_dump(),
             "status_pompa": hasil["status_pompa"],
             "alasan": hasil["alasan"]
         }
