@@ -72,7 +72,6 @@ async def _task_evaluasi_sensor_dan_pompa():
             sesi_id          =sesi_id,
             suhu_udara       =sensors.get("suhu_udara", 30.0),
             kelembaban_tanah =sensors.get("kelembaban_tanah", 50.0),
-            hujan_terdeteksi =sensors.get("hujan_terdeteksi", False),
         )
 
         # 5. Broadcast update sensor ke semua client WebSocket

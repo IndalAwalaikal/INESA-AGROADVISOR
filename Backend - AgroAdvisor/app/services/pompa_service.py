@@ -136,7 +136,6 @@ def evaluasi_pompa(
     sesi_id:         str,
     suhu_udara:      float,
     kelembaban_tanah: float,
-    hujan_terdeteksi: bool,
 ) -> dict:
     """
     Evaluasi kondisi sensor dan putuskan aksi pompa.
@@ -177,6 +176,15 @@ def evaluasi_pompa(
         return _response_state("nonaktif", "Mode pompa dinonaktifkan")
 
     # Rule 3 — hujan terdeteksi
+    hujan_terdeteksi = False
+    try:
+        from app.services.weather_service import _cache, get_cuaca_sekarang, cek_hujan_akan_datang
+        data_cuaca = _cache.get("data")
+        cuaca_aktif = get_cuaca_sekarang(data_cuaca)
+        hujan_terdeteksi = cuaca_aktif.get("adalah_hujan", False)
+    except Exception:
+        data_cuaca = None
+
     if hujan_terdeteksi:
         if _state_pompa["status"] == "nyala":
             durasi = _hitung_durasi_menit(_state_pompa["nyala_sejak"])
@@ -190,8 +198,6 @@ def evaluasi_pompa(
 
     # Rule 3.5 — cek prakiraan cuaca (jika tersedia)
     try:
-        from app.services.weather_service import _cache, cek_hujan_akan_datang
-        data_cuaca = _cache.get("data")
         if data_cuaca:
             alert = cek_hujan_akan_datang(data_cuaca, jam_ke_depan=2)
             if alert.get("akan_hujan") and _state_pompa["status"] != "nyala":

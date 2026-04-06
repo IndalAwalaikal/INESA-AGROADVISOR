@@ -73,11 +73,14 @@ def get_status(db: Session = Depends(get_db)):
 
     # Baca sensor terkini
     try:
+        from app.services.weather_service import _cache, get_cuaca_sekarang
+        cuaca_sekarang = get_cuaca_sekarang(_cache.get("data"))
+        hujan = cuaca_sekarang.get("adalah_hujan", False)
+        
         raw     = baca_sensor_json()
         sensors = raw.get("sensors", {})
         suhu    = sensors.get("suhu_udara", 30.0)
         kelembaban_tanah = sensors.get("kelembaban_tanah", 50.0)
-        hujan   = sensors.get("hujan_terdeteksi", False)
     except FileNotFoundError:
         suhu             = 30.0
         kelembaban_tanah = 50.0
@@ -89,7 +92,6 @@ def get_status(db: Session = Depends(get_db)):
         sesi_id          =sesi_id,
         suhu_udara       =suhu,
         kelembaban_tanah =kelembaban_tanah,
-        hujan_terdeteksi =hujan,
     )
 
     # Gabungkan dengan info lengkap state pompa

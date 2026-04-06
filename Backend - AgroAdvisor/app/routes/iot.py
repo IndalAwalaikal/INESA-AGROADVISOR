@@ -19,7 +19,6 @@ class IoTSensorRequest(BaseModel):
     fosfor: float
     kalium: float
     kelembaban_tanah: float
-    hujan_terdeteksi: bool
 
 @router.post("/sensor")
 async def post_sensor_iot(req: IoTSensorRequest, db: Session = Depends(get_db)):
@@ -34,8 +33,7 @@ async def post_sensor_iot(req: IoTSensorRequest, db: Session = Depends(get_db)):
         db=db,
         sesi_id=sesi_id,
         suhu_udara=req.suhu_udara,
-        kelembaban_tanah=req.kelembaban_tanah,
-        hujan_terdeteksi=req.hujan_terdeteksi
+        kelembaban_tanah=req.kelembaban_tanah
     )
     
     # 4. Broadcast ke Dashboard via WebSocket

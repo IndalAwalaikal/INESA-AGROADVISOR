@@ -58,6 +58,10 @@ def get_status_sensor():
     Saat IoT sudah tersambung, cukup ganti `baca_sensor_json()` dengan pembacaan MQTT.
     """
     try:
+        from app.services.weather_service import _cache, get_cuaca_sekarang
+        cuaca_aktif = get_cuaca_sekarang(_cache.get("data"))
+        hujan = cuaca_aktif.get("adalah_hujan", False)
+        
         data    = baca_sensor_json()
         sensors = data.get("sensors", {})
         sesi_id = get_atau_buat_sesi()
@@ -79,7 +83,7 @@ def get_status_sensor():
             suhu_udara       =sensors.get("suhu_udara"),
             kelembaban_udara =sensors.get("kelembaban_udara"),
             kelembaban_tanah =sensors.get("kelembaban_tanah"),
-            hujan_terdeteksi =sensors.get("hujan_terdeteksi", False),
+            hujan_terdeteksi =hujan,
             **status,
         )
     except FileNotFoundError as e:

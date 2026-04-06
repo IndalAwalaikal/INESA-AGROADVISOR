@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import os
 from contextlib import asynccontextmanager
 
 from app.database import init_db
@@ -65,7 +66,7 @@ Backend API untuk pertanian presisi berbasis sensor IoT dan AI (Claude — Anthr
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins    = ["*"],
+    allow_origins    = [os.getenv("FRONTEND_URL", "http://localhost:3000"), "http://localhost", "http://127.0.0.1"],
     allow_credentials= True,
     allow_methods    = ["*"],
     allow_headers    = ["*"],
