@@ -74,6 +74,14 @@ async def _task_evaluasi_sensor_dan_pompa():
             kelembaban_tanah =sensors.get("kelembaban_tanah", 50.0),
         )
 
+        logger.info(
+            f"Evaluasi pompa: status={hasil_pompa.get('status_pompa')}, "
+            f"aksi={hasil_pompa.get('aksi')}, "
+            f"suhu={sensors.get('suhu_udara')}, "
+            f"kelembaban={sensors.get('kelembaban_tanah')}, "
+            f"alasan={hasil_pompa.get('alasan')}"
+        )
+
         # 5. Broadcast update sensor ke semua client WebSocket
         if manager.jumlah_client > 0:
             await manager.kirim_update_sensor(

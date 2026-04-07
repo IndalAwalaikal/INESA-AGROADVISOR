@@ -39,7 +39,7 @@ export default function DashboardPage() {
         getCuacaSekarang(),
         getHujanAlert()
       ])
-      if (wRes.status === 'fulfilled') setWeather(wRes.value.data)
+      if (wRes.status === 'fulfilled') setWeather(wRes.value.data?.cuaca || wRes.value.data)
       if (aRes.status === 'fulfilled') setWeatherAlert(aRes.value.data)
     } catch (e) {
       console.error("Gagal load cuaca", e)
@@ -174,7 +174,11 @@ export default function DashboardPage() {
                 <>
                   <div className="flex flex-col sm:flex-row items-center gap-6">
                     <div className="flex items-center gap-4">
-                      <span className="text-4xl">{weather.ikon ? `https://openweathermap.org/img/wn/${weather.ikon}@2x.png` : '☁️'}</span>
+                      {weather.ikon ? (
+                        <img src={`https://openweathermap.org/img/wn/${weather.ikon}@2x.png`} alt={weather.deskripsi || 'cuaca'} className="w-16 h-16" />
+                      ) : (
+                        <span className="text-4xl">☁️</span>
+                      )}
                       {/* Note: Ikon string can be used to load image manually if needed, but for now we rely on emoji or image */}
                       <div>
                         <div className="text-3xl font-bold text-white">{weather.suhu}°C</div>

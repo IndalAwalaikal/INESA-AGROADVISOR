@@ -20,6 +20,10 @@ _jadwal_aktif = {
     "durasi_menit": 0,
 }
 
+# Tracking jadwal yang sudah di-trigger hari ini (untuk mencegah double-trigger)
+# Format: {(jadwal_id, tanggal_str): True}
+_jadwal_triggered_today: dict = {}
+
 
 def get_semua_jadwal(db: Session) -> list:
     """Ambil semua jadwal dari database."""
@@ -116,11 +120,17 @@ def cek_dan_eksekusi_jadwal(db: Session) -> dict | None:
     now = datetime.now()
     jam_sekarang = now.time()
     hari_sekarang = now.strftime("%A").lower()
+    tanggal_str = now.strftime("%Y-%m-%d")
     nama_hari_id = {
         "monday": "senin", "tuesday": "selasa", "wednesday": "rabu",
         "thursday": "kamis", "friday": "jumat", "saturday": "sabtu", "sunday": "minggu",
     }
     hari_id = nama_hari_id.get(hari_sekarang, hari_sekarang)
+
+    # Bersihkan tracking hari kemarin
+    keys_to_remove = [k for k in _jadwal_triggered_today if k[1] != tanggal_str]
+    for k in keys_to_remove:
+        del _jadwal_triggered_today[k]
 
     rows = db.execute(text("""
         SELECT id, jam, durasi_menit, hari
@@ -138,11 +148,19 @@ def cek_dan_eksekusi_jadwal(db: Session) -> dict | None:
         if hari != "semua" and hari_id not in hari.lower():
             continue
 
-        # Cek apakah jam sekarang cocok (toleransi 1 menit)
+        # Cek apakah jadwal ini sudah di-trigger hari ini
+        trigger_key = (jadwal_id, tanggal_str)
+        if trigger_key in _jadwal_triggered_today:
+            continue
+
+        # Cek apakah jam sekarang cocok (toleransi ±1 menit untuk menghindari miss)
         jadwal_menit = jam_jadwal.hour * 60 + jam_jadwal.minute
         sekarang_menit = jam_sekarang.hour * 60 + jam_sekarang.minute
 
-        if jadwal_menit == sekarang_menit:
+        if abs(jadwal_menit - sekarang_menit) <= 1:
+            # Tandai sudah di-trigger hari ini
+            _jadwal_triggered_today[trigger_key] = True
+
             # Trigger pompa!
             sesi_id = get_atau_buat_sesi()
             alasan = f"Jadwal terjadwal: {jam_jadwal.strftime('%H:%M')} selama {durasi} menit"
