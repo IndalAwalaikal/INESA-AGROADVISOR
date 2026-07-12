@@ -23,7 +23,7 @@ from app.services.pestisida_db_service import (
     simpan_rekomendasi_pestisida,
 )
 from app.services.pdf_service import generate_pestisida_pdf
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from app.services.db_service import simpan_log_sensor, simpan_feedback
 from app.models.schemas import FeedbackRequest
 
@@ -176,7 +176,7 @@ async def post_identifikasi_gambar(
         )
         
         if not hasil_ai["sukses"]:
-            raise HTTPException(status_code=500, detail=hasil_ai["error"])
+            return JSONResponse(status_code=500, content=hasil_ai)
             
         return {
             "sukses": True,
@@ -185,7 +185,7 @@ async def post_identifikasi_gambar(
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Terjadi kesalahan saat memproses gambar: {str(e)}")
+        return JSONResponse(status_code=500, content={"sukses": False, "error": f"Terjadi kesalahan saat memproses gambar: {str(e)}"})
 
 
 # ─────────────────────────────────────────────────────────────────────────────

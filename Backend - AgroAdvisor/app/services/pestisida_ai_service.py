@@ -401,31 +401,53 @@ async def identifikasi_hama_dari_gambar(image_bytes: bytes, mime_type: str) -> d
     if os.getenv("USE_DUMMY_AI") == "true":
         return {"sukses": True, "nama_hama": "Wereng Coklat (Dummy)"}
 
+    # Format payload untuk gambar menggunakan Part.from_bytes
     try:
-        # Menggunakan model flash yang mendukung visi
-        import logging
-        logging.info("Menganalisis gambar hama dengan Gemini...")
-        
-        # Format payload untuk gambar
-        image_part = {
-            "inline_data": {
-                "mime_type": mime_type,
-                "data": image_bytes
-            }
-        }
-        
-        response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=[SYSTEM_PROMPT_VISION, image_part],
-            config=types.GenerateContentConfig(temperature=0.2)
+        image_part = types.Part.from_bytes(
+            data=image_bytes,
+            mime_type=mime_type
         )
-        
-        data = json.loads(_bersihkan_json(response.text))
-        nama_hama = data.get("nama_hama", "Hama tidak teridentifikasi")
-        
-        return {
-            "sukses": True, 
-            "nama_hama": nama_hama
-        }
     except Exception as e:
-        return {"sukses": False, "error": f"Gagal menganalisis gambar: {str(e)}"}
+         return {"sukses": False, "error": f"Gagal memformat gambar: {str(e)}"}
+
+    prompt_contents = [SYSTEM_PROMPT_VISION, image_part]
+
+    # Karena ini butuh vision, filter model_fallback yang mendukung vision if needed
+    # Namun qwen2.5 (Ollama default) dan llama-3.3-70b-versatile (Groq) tidak mendukung vision secara default
+    # Kita fokus ke Gemini models yang ada di daftar fallback
+    vision_models = [m for m in MODELS_FALLBACK if m.startswith('gemini-')]
+    
+    last_error = None
+    for model_name in vision_models:
+        try:
+            import logging
+            logging.info(f"Menganalisis gambar hama dengan {model_name}...")
+            
+            response = await client.aio.models.generate_content(
+                model=model_name,
+                contents=prompt_contents,
+                config=types.GenerateContentConfig(temperature=0.2)
+            )
+            
+            data = json.loads(_bersihkan_json(response.text))
+            nama_hama = data.get("nama_hama", "Hama tidak teridentifikasi")
+            
+            return {
+                "sukses": True, 
+                "nama_hama": nama_hama,
+                "_model_used": model_name
+            }
+        except Exception as e:
+            last_error = e
+            # Log the error but keep trying other models
+            import logging
+            logging.warning(f"Gagal dengan model {model_name}: {str(e)}")
+            error_str = str(e)
+            if "API_KEY_INVALID" in error_str: 
+                return {"sukses": False, "status_code": 401, "error": "API Key Google Gemini Anda tidak valid (401)"}
+            if "RESOURCE_EXHAUSTED" in error_str or "429" in error_str:
+                return {"sukses": False, "status_code": 429, "error": "Batas penggunaan API AI (Gemini) Anda telah habis untuk menit/hari ini. Silakan tunggu sekitar 1 menit dan coba lagi."}
+                
+            continue
+            
+    return {"sukses": False, "error": f"Semua model vision gagal menganalisis gambar. Pastikan gambar valid atau API key Anda berfungsi. (Error terakhir: {str(last_error)})"}
