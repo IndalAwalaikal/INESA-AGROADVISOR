@@ -1,0 +1,48 @@
+# ============================================
+# ROOT .gitignore — AgroAdvisor Project
+# ============================================
+
+# Environment files (NEVER commit these)
+.env
+.env.local
+.env.*.local
+*/.env
+*/.env.local
+
+# Logs (may contain API keys in request URLs)
+*.log
+logs/
+**/server_test.log
+**/server.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Node.js / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# Test & debug scripts (often contain hardcoded values)
+test_*.py
+check_*.py
+list_*.py
+*_output.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

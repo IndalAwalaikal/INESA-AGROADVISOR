@@ -1,7 +1,25 @@
+# Environment & Secrets
 .env
+.env.local
+.env.*.local
+
+# Python
 .venv
 __pycache__
 *.pyc
 *.pyo
 *.pyd
-*.pyo
+
+# Logs (may contain API keys in URLs)
+*.log
+logs/
+
+# Test & debug files
+test_*.py
+check_*.py
+list_*.py
+*_output.txt
+models_output.txt
+
+# VS Code
+.vscode/
